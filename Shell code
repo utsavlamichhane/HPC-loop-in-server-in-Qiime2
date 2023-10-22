@@ -70,3 +70,5 @@ done
 cd $SLURM_SUBMIT_DIR
 
 #I used my user: ul54354 where you can use your server username 
+
+
