@@ -39,7 +39,7 @@ else
     echo "Error: DNA_sequence.qza not found in /lscratch/$ul54354/$SLURM_JOB_ID"
     exit 1
 fi
-# Denoising for the combinations f_245 to f_248
+# Denoising for the combinations f_245 to f_248 and r_234 to r_241  and the trims are f_20 and r_24
 for trunc_f in {245..248}; do
     for trunc_r in {234..241}; do
         FILE_SUFFIX="f${trunc_f}_r${trunc_r}"
