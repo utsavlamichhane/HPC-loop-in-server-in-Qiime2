@@ -44,7 +44,7 @@ for trunc_f in {245..248}; do
     for trunc_r in {234..241}; do
         FILE_SUFFIX="f${trunc_f}_r${trunc_r}"
         mkdir -p /lscratch/$ul54354/$SLURM_JOB_ID
-        cp -R $SOONIE_PATH /lscratch/$ul54354/$SLURM_JOB_ID
+        cp -R $FILE_PATH /lscratch/$ul54354/$SLURM_JOB_ID
         cd /lscratch/$ul54354/$SLURM_JOB_ID
         if [[ -f DNA_sequence.qza ]]; then
             qiime dada2 denoise-paired \
