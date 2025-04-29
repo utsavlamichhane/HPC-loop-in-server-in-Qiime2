@@ -1,0 +1,113 @@
+#!/bin/bash
+#SBATCH --job-name=dada2_finals_2025
+#SBATCH --partition=highmem_p
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=64
+#SBATCH --mem=100G
+#SBATCH --time=24:00:00
+#SBATCH --export=NONE
+#SBATCH --output=%x_%j.out
+#SBATCH --error=%x_%j.err
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ul54354@uga.edu
+# Absolute path to the PE_seqs.qza file
+FILE_PATH="/home/ul54354/QIIME2_Final/PE_seqs.qza"
+cd $SLURM_SUBMIT_DIR
+export LC_ALL=en_US.UTF-8
+ml QIIME2/2024.10-amplicon
+
+# Create the output directory
+OUTPUT_DIR="$SLURM_SUBMIT_DIR/dada2_results"
+mkdir -p $OUTPUT_DIR
+
+# First denoising run without truncations
+mkdir -p /lscratch/$ul54354/$SLURM_JOB_ID
+cp -R $FILE_PATH /lscratch/$ul54354/$SLURM_JOB_ID
+cd /lscratch/$ul54354/$SLURM_JOB_ID
+if [[ -f PE_seqs.qza ]]; then
+    qiime dada2 denoise-paired \
+    --i-demultiplexed-seqs PE_seqs.qza \
+    --p-trunc-len-f 0 \
+    --p-trunc-len-r 0 \
+    --p-trim-left-f 19 \
+    --p-trim-left-r 23 \
+    --p-n-threads 0 \
+    --o-table table_0.qza \
+    --o-representative-sequences rep_seqs_0.qza \
+    --o-denoising-stats dada2_stats_0.qza
+    cp -R table_0.qza $OUTPUT_DIR
+    cp -R rep_seqs_0.qza $OUTPUT_DIR
+    cp -R dada2_stats_0.qza $OUTPUT_DIR
+    
+    # Generate .qzv files for the outputs
+    qiime metadata tabulate \
+    --m-input-file table_0.qza \
+    --o-visualization table_0.qzv
+    qiime metadata tabulate \
+    --m-input-file rep_seqs_0.qza \
+    --o-visualization rep_seqs_0.qzv
+    qiime metadata tabulate \
+    --m-input-file dada2_stats_0.qza \
+    --o-visualization dada2_stats_0.qzv
+    
+    # Move .qzv files to the output directory
+    mv table_0.qzv $OUTPUT_DIR
+    mv rep_seqs_0.qzv $OUTPUT_DIR
+    mv dada2_stats_0.qzv $OUTPUT_DIR
+    
+    rm -r -f /lscratch/$ul54354/$SLURM_JOB_ID
+else
+    echo "Error: PE_seqs.qza not found in /lscratch/$ul54354/$SLURM_JOB_ID"
+    exit 1
+fi
+
+# Denoising for combinations of truncation lengths (f_235 to f_245 and r_228 to r_238)
+for trunc_f in {235..245}; do
+    for trunc_r in {228..238}; do
+        FILE_SUFFIX="f${trunc_f}_r${trunc_r}"
+        mkdir -p /lscratch/$ul54354/$SLURM_JOB_ID
+        cp -R $FILE_PATH /lscratch/$ul54354/$SLURM_JOB_ID
+        cd /lscratch/$ul54354/$SLURM_JOB_ID
+        if [[ -f PE_seqs.qza ]]; then
+            qiime dada2 denoise-paired \
+            --i-demultiplexed-seqs PE_seqs.qza \
+            --p-trunc-len-f $trunc_f \
+            --p-trunc-len-r $trunc_r \
+            --p-trim-left-f 19 \
+            --p-trim-left-r 23 \
+            --p-n-threads 0 \
+            --o-table table_${FILE_SUFFIX}.qza \
+            --o-representative-sequences rep_seqs_${FILE_SUFFIX}.qza \
+            --o-denoising-stats dada2_stats_${FILE_SUFFIX}.qza
+            cp -R table_${FILE_SUFFIX}.qza $OUTPUT_DIR
+            cp -R rep_seqs_${FILE_SUFFIX}.qza $OUTPUT_DIR
+            cp -R dada2_stats_${FILE_SUFFIX}.qza $OUTPUT_DIR
+            
+            # Generate .qzv files for the outputs
+            qiime metadata tabulate \
+            --m-input-file table_${FILE_SUFFIX}.qza \
+            --o-visualization table_${FILE_SUFFIX}.qzv
+            qiime metadata tabulate \
+            --m-input-file rep_seqs_${FILE_SUFFIX}.qza \
+            --o-visualization rep_seqs_${FILE_SUFFIX}.qzv
+            qiime metadata tabulate \
+            --m-input-file dada2_stats_${FILE_SUFFIX}.qza \
+            --o-visualization dada2_stats_${FILE_SUFFIX}.qzv
+            
+            # Move .qzv files to the output directory
+            mv table_${FILE_SUFFIX}.qzv $OUTPUT_DIR
+            mv rep_seqs_${FILE_SUFFIX}.qzv $OUTPUT_DIR
+            mv dada2_stats_${FILE_SUFFIX}.qzv $OUTPUT_DIR
+            
+            rm -r -f /lscratch/$ul54354/$SLURM_JOB_ID
+        else
+            echo "Error: PE_seqs.qza not found in /lscratch/$ul54354/$SLURM_JOB_ID for truncation f=$trunc_f r=$trunc_r"
+            exit 1
+        fi
+    done
+done
+
+# Return to the submit directory
+cd $SLURM_SUBMIT_DIR
+
