@@ -113,3 +113,4 @@ done
 # Return to the submit directory
 cd $SLURM_SUBMIT_DIR
 
+#i have used ul54354 which is my username, please replace it with your username 
